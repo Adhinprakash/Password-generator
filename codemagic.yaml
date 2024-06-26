@@ -1,0 +1,71 @@
+workflows:
+  android-workflow:
+    name: minichat
+    max_build_duration: 40
+    environment:
+      # android_signing:
+        # - keystore_reference
+      # groups:
+      #   - google_play
+      # vars:
+      #   PACKAGE_NAME: "io.codemagic.fluttersample"
+      #   GOOGLE_PLAY_TRACK: alpha
+      flutter: 3.22.1
+    scripts:
+      - name: Set up local.properties
+        script: | 
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Get Flutter packages
+        script: | 
+          flutter packages pub get
+      - name: Flutter analyze
+        script: | 
+          flutter analyze
+      # - name: Flutter unit tests
+      #   script: | 
+      #     flutter test
+      #   ignore_failure: true
+      - name: Build AAB with Flutter
+        script: | 
+          BUILD_NUMBER=$(($(google-play get-latest-build-number --package-name "$PACKAGE_NAME" --tracks="$GOOGLE_PLAY_TRACK") + 1))      
+          flutter build appbundle --release \
+            --build-name=1.0.$BUILD_NUMBER \
+            --build-number=$BUILD_NUMBER
+    scripts:
+      - name: Set up code signing settings on Xcode project
+        script: | 
+          xcode-project use-profiles
+      - name: Get Flutter packages
+        script: | 
+          flutter packages pub get
+      - name: Install pods
+        script: | 
+          find . -name "Podfile" -execdir pod install \;
+      # - name: Flutter analyze
+        # script: | 
+        #   flutter analyze
+      # - name: Flutter unit tests
+        # script: | 
+        #   flutter test
+        # ignore_failure: true
+      - name: Flutter build ipa
+        script: | 
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number=$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1)) \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/**/outputs/**/*.aab
+      - build/**/outputs/**/mapping.txt
+      - flutter_drive.log
+    publishing:
+      email:
+        recipients:
+          - adhinprakash70@gmail.com       
+        notify:
+          success: true
+          failure: false
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: $GOOGLE_PLAY_TRACK
+      #   submit_as_draft: true
