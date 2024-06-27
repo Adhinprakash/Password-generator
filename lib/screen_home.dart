@@ -135,7 +135,7 @@ void onVolumeChanged(double value) {
                         Text(_volumeValue.ceil()
                             .toString() ,
                             style: const TextStyle(
-                                fontSize: 50,
+                                fontSize: 52,
                                 fontWeight: FontWeight
                                     .bold,
                                 color: Color(0xFFCC2B5E))),
